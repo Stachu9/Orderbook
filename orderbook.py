@@ -35,25 +35,11 @@ class Action(object):
         self.quantity = quantity
 
     def __str__(self):
-        return {
-            "Id": self.orderId,
-            "Order": self.orderType,
-            "Type": self.action,
-            "Price": self.price,
-            "Quantity": self.quantity
-        }
-    
-    def printAction(self):
+
         orderType = "Buy" if self.orderType == OrderType.BUY else "Sell"
         actionType = "Add" if self.action == ActionType.ADD else "Remove"
 
         return "Id: {}  Order: {}  Type: {}  Price: {}$  Quantity: {}".format(self.orderId, orderType, actionType, self.price, self.quantity)
-    
-    def printOrder(self):
-        orderType = "Buy" if self.orderType == OrderType.BUY else "Sell"
-        actionType = "Add" if self.action == ActionType.ADD else "Remove"
-
-        return "Id: {}  Order: {}   Price: {}$  Quantity: {}".format(self.orderId, orderType, self.price, self.quantity)
     
     @staticmethod
     def createActionObject(action):
@@ -67,19 +53,19 @@ def createOrderBook(orders):
     orderBook = []
 
     # creates list of different Id's in orders
-    IdList = []
+    idList = []
     for element in orders:
-        if not element.orderId in IdList:
-            IdList.append(element.orderId)
+        if not element.orderId in idList:
+            idList.append(element.orderId)
 
-    for Id in IdList:
+    for id in idList:
 
-        orderWithSpecificId = next((item for item in orderBook if item["id"] == Id), 0)
+        orderWithSpecificId = next((item for item in orderBook if item["id"] == id), 0)
 
         # creates temporary list of orders with the same Id
         for element in orders:
 
-            if element.orderId == Id:
+            if element.orderId == id:
                 if not orderWithSpecificId:
                     orderWithSpecificId = {"id": element.orderId, "order": element.orderType, "price": element.price, "quantity": element.quantity}
                     orderBook.append(orderWithSpecificId)
@@ -156,7 +142,7 @@ def main():
         bestSharesToSell = findBestPrice(orderBook, OrderType.BUY)
         
         print("Order added in this step from the given list:")
-        print(listOfOrders[i].printAction())
+        print(listOfOrders[i])
         print()
         print("Actual orderbook:")
         for element in orderBook:
