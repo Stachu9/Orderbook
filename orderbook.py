@@ -23,21 +23,21 @@ class Action(object):
 
     orderId: int
     orderType: OrderType
-    action: ActionType
+    actionType: ActionType
     price: float
     quantity: int
 
-    def __init__(self, orderId, orderType, action, price, quantity):
+    def __init__(self, orderId, orderType, actionType, price, quantity):
         self.orderId = orderId
         self.orderType = orderType
-        self.action = action
+        self.actionType = actionType
         self.price = price
         self.quantity = quantity
 
     def __str__(self):
 
         orderType = "Buy" if self.orderType == OrderType.BUY else "Sell"
-        actionType = "Add" if self.action == ActionType.ADD else "Remove"
+        actionType = "Add" if self.actionType == ActionType.ADD else "Remove"
 
         return "Id: {}  Order: {}  Type: {}  Price: {}$  Quantity: {}".format(self.orderId, orderType, actionType, self.price, self.quantity)
     
@@ -47,6 +47,41 @@ class Action(object):
         actionType = ActionType.ADD if action["Type"] == "Add" else ActionType.REMOVE
 
         return Action(action["Id"], orderType, actionType, action["Price"], action["Quantity"])
+
+class Order(object):
+
+    actions: list[Action] = []
+
+    def __init__(self, action):
+        self.actions[0] = action
+
+    def getId(self):
+        return self.actions[0].orderId
+
+    def getOrderType(self):
+        return self.actions[0].orderType
+    
+    def getPrice(self):
+        return self.actions[0].price
+    
+    def getQuantity(self):
+        quantity = 0
+        for action in self.actions:
+            if action.actionType == ActionType.ADD:
+                quantity += action.quantity
+            else:
+                quantity -= action.quantity
+        
+        return quantity
+    
+    def addAction(self, action):
+        if not ((self.actions[0].orderId == action.orderId) and (self.actions[0].orderType == action.orderType) and (self.actions[0].price == action.price)):
+            raise ValueError("Action id doesn't match")
+        elif not (self.actions[0].orderType == action.orderType):
+            raise ValueError("Action order type doesn't match")
+        elif not (self.actions[0].price == action.price):
+            raise ValueError("Action price doesn't match")
+        self.actions.append(action)
 
 # create orderbook of summed up orders from list
 def createOrderBook(orders):
