@@ -50,10 +50,15 @@ class Action(object):
 
 class Order(object):
 
-    actions: list[Action] = []
-
     def __init__(self, action):
-        self.actions[0] = action
+        self.actions: list[Action] = []
+        self.actions.append(action)
+
+    def __str__(self):
+
+        orderType = "Buy" if self.getOrderType() == OrderType.BUY else "Sell"
+
+        return "Id: {}  Order type: {}  Price: {}$  Quantity: {}".format(self.getId(), orderType, self.getPrice(), self.getQuantity())
 
     def getId(self):
         return self.actions[0].orderId
@@ -84,35 +89,29 @@ class Order(object):
         self.actions.append(action)
 
 # create orderbook of summed up orders from list
-def createOrderBook(orders):
-    orderBook = []
+def createOrderBook(actions):
+    orderBook: list[Order] = []
 
     # creates list of different Id's in orders
     idList = []
-    for element in orders:
-        if not element.orderId in idList:
-            idList.append(element.orderId)
+    for action in actions:
+        if not action.orderId in idList:
+            idList.append(action.orderId)
 
     for id in idList:
 
-        orderWithSpecificId = next((item for item in orderBook if item["id"] == id), 0)
+        orderWithSpecificId = next((item for item in orderBook if item.getId() == id), 0)
 
         # creates temporary list of orders with the same Id
-        for element in orders:
+        for action in actions:
 
-            if element.orderId == id:
+            if action.orderId == id:
                 if not orderWithSpecificId:
-                    orderWithSpecificId = {"id": element.orderId, "order": element.orderType, "price": element.price, "quantity": element.quantity}
+                    orderWithSpecificId = Order(action)
                     orderBook.append(orderWithSpecificId)
                 else:
-                    if element.action == ActionType.ADD:
-                        orderWithSpecificId["quantity"] += element.quantity
-                    else:
-                        orderWithSpecificId["quantity"] -= element.quantity
-
-                        if orderWithSpecificId["quantity"] == 0:
-                            orderBook.remove(orderWithSpecificId)
-        
+                    orderWithSpecificId.addAction(action)
+    
     return orderBook
         
 # finds best price and quantity of shares in this price        
@@ -121,14 +120,15 @@ def findBestPrice(orderBook, orderType):
     # creates temporary list of orders of the same type (buy / sell)
     tempList = []
     for element in orderBook:
-        if element["order"] == orderType:
+
+        if element.getOrderType() == orderType:
             tempList.append(element)
     
     # if there is no order of this type returns False
     if len(tempList) == 0:
         return False
     
-    bestPrice = {"price": tempList[0]["price"], "quantity": tempList[0]["quantity"]}
+    bestPrice = {"price": tempList[0].getPrice(), "quantity": tempList[0].getQuantity()}
     
     # if there is only 1 order of this type - function returns it as best price
     if len(tempList) == 1:
@@ -137,18 +137,18 @@ def findBestPrice(orderBook, orderType):
     # looks for the best price and sums quantity of shares in this price
     if orderType == OrderType.BUY:
         for i in range(1, len(tempList)):
-            if bestPrice["price"] == tempList[i]["price"]:
-                bestPrice["quantity"] += tempList[i]["quantity"]
-            elif bestPrice["price"] < tempList[i]["price"]:
-                bestPrice["price"] = tempList[i]["price"]
-                bestPrice["quantity"] = tempList[i]["quantity"]
+            if bestPrice["price"] == tempList[i].getPrice():
+                bestPrice["quantity"] += tempList[i].getQuantity()
+            elif bestPrice["price"] < tempList[i].getPrice():
+                bestPrice["price"] = tempList[i].getPrice()
+                bestPrice["quantity"] = tempList[i].getQuantity()
     else:
         for i in range(1, len(tempList)):
-            if bestPrice["price"] == tempList[i]["price"]:
-                bestPrice["quantity"] += tempList[i]["quantity"]
-            elif bestPrice["price"] > tempList[i]["price"]:
-                bestPrice["price"] = tempList[i]["price"]
-                bestPrice["quantity"] = tempList[i]["quantity"]
+            if bestPrice["price"] == tempList[i].getPrice():
+                bestPrice["quantity"] += tempList[i].getQuantity()
+            elif bestPrice["price"] > tempList[i].getPrice():
+                bestPrice["price"] = tempList[i].getPrice()
+                bestPrice["quantity"] = tempList[i].getQuantity()
     
     return bestPrice
 
@@ -180,8 +180,8 @@ def main():
         print(listOfOrders[i])
         print()
         print("Actual orderbook:")
-        for element in orderBook:
-            print("Id: {}  Order: {}   Price: {}$  Quantity: {}".format(element["id"], element["order"], element["price"], element["quantity"]))
+        for order in orderBook:
+            print("Id: {}  Order: {}   Price: {}$  Quantity: {}".format(order.getId(), order.getOrderType(), order.getPrice(), order.getQuantity()))
         
         print()
         # checks if there is any best buy or sell oportunity and prints it.
