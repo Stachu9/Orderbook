@@ -55,9 +55,7 @@ class Order(object):
         self.actions.append(action)
 
     def __str__(self):
-
         orderType = "Buy" if self.getOrderType() == OrderType.BUY else "Sell"
-
         return "Id: {}  Order type: {}  Price: {}$  Quantity: {}".format(self.getId(), orderType, self.getPrice(), self.getQuantity())
 
     def getId(self):
@@ -88,38 +86,25 @@ class Order(object):
             raise ValueError("Action price doesn't match")
         self.actions.append(action)
 
-# create orderbook of summed up orders from list
-def createOrderBook(actions):
-    orderBook: list[Order] = []
-
-    # creates list of different Id's in orders
-    idList = []
-    for action in actions:
-        if not action.orderId in idList:
-            idList.append(action.orderId)
-
-    for id in idList:
-
-        orderWithSpecificId = next((item for item in orderBook if item.getId() == id), 0)
-
-        # creates temporary list of orders with the same Id
-        for action in actions:
-
-            if action.orderId == id:
-                if not orderWithSpecificId:
-                    orderWithSpecificId = Order(action)
-                    orderBook.append(orderWithSpecificId)
-                else:
-                    orderWithSpecificId.addAction(action)
+class OrderBook(object):
     
-    return orderBook
+    def __init__(self):
+        self.orders = {}
+
+    def addAction(self, action):
+
+        if action.orderId in self.orders:
+            self.orders[action.orderId].addAction(action)       
+        else:
+            self.orders[action.orderId] = Order(action)
+            
         
 # finds best price and quantity of shares in this price        
 def findBestPrice(orderBook, orderType):
     
     # creates temporary list of orders of the same type (buy / sell)
     tempList = []
-    for element in orderBook:
+    for element in orderBook.orders.values():
 
         if element.getOrderType() == orderType:
             tempList.append(element)
@@ -155,11 +140,12 @@ def findBestPrice(orderBook, orderType):
 
 def main():
     
+    orderBook = OrderBook()
+
     # list of active, proceeded orders
     listOfOrders = []
     
     print("No active orders.")
-    i = 0
     
     for i in range(len(givenOrders)):
         print()
@@ -170,18 +156,19 @@ def main():
         print("---------------------------------")
         
         # if there is another order in given list - adds to list of orders - else quits program
-        listOfOrders.append(Action.createActionObject(givenOrders[i]))
+
+        addingAction = Action.createActionObject(givenOrders[i])
+        orderBook.addAction(addingAction)
         
-        orderBook = createOrderBook(listOfOrders)
         bestSharesToBuy = findBestPrice(orderBook, OrderType.SELL)
         bestSharesToSell = findBestPrice(orderBook, OrderType.BUY)
         
         print("Order added in this step from the given list:")
-        print(listOfOrders[i])
+        print(addingAction)
         print()
         print("Actual orderbook:")
-        for order in orderBook:
-            print("Id: {}  Order: {}   Price: {}$  Quantity: {}".format(order.getId(), order.getOrderType(), order.getPrice(), order.getQuantity()))
+        for order in orderBook.orders.values():
+            print(order)
         
         print()
         # checks if there is any best buy or sell oportunity and prints it.
@@ -195,7 +182,6 @@ def main():
         else:
             print("The best you can buy is - no SELL offers in orderbook")
         
-        i += 1
     print("No more given orders.")
 
 main()
