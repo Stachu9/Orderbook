@@ -97,46 +97,42 @@ class OrderBook(object):
             self.orders[action.orderId].addAction(action)       
         else:
             self.orders[action.orderId] = Order(action)
-            
+
+    def findBestOfferToBuy(self):
+
+        bestOfferToBuy = {}
+
+        for order in self.orders.values():
+            if order.getOrderType() == OrderType.SELL:
+                if bestOfferToBuy:
+                    if bestOfferToBuy["price"] == order.getPrice():
+                        bestOfferToBuy["quantity"] += order.getQuantity()
+                    elif bestOfferToBuy["price"] > order.getPrice():
+                        bestOfferToBuy["price"] = order.getPrice()
+                        bestOfferToBuy["quantity"] = order.getQuantity()
+                else:
+                    bestOfferToBuy["price"] = order.getPrice()
+                    bestOfferToBuy["quantity"] = order.getQuantity()
         
-# finds best price and quantity of shares in this price        
-def findBestPrice(orderBook, orderType):
+        return bestOfferToBuy
     
-    # creates temporary list of orders of the same type (buy / sell)
-    tempList = []
-    for element in orderBook.orders.values():
+    def findBestOfferToSell(self):
 
-        if element.getOrderType() == orderType:
-            tempList.append(element)
-    
-    # if there is no order of this type returns False
-    if len(tempList) == 0:
-        return False
-    
-    bestPrice = {"price": tempList[0].getPrice(), "quantity": tempList[0].getQuantity()}
-    
-    # if there is only 1 order of this type - function returns it as best price
-    if len(tempList) == 1:
-        return bestPrice
-    
-    # looks for the best price and sums quantity of shares in this price
-    if orderType == OrderType.BUY:
-        for i in range(1, len(tempList)):
-            if bestPrice["price"] == tempList[i].getPrice():
-                bestPrice["quantity"] += tempList[i].getQuantity()
-            elif bestPrice["price"] < tempList[i].getPrice():
-                bestPrice["price"] = tempList[i].getPrice()
-                bestPrice["quantity"] = tempList[i].getQuantity()
-    else:
-        for i in range(1, len(tempList)):
-            if bestPrice["price"] == tempList[i].getPrice():
-                bestPrice["quantity"] += tempList[i].getQuantity()
-            elif bestPrice["price"] > tempList[i].getPrice():
-                bestPrice["price"] = tempList[i].getPrice()
-                bestPrice["quantity"] = tempList[i].getQuantity()
-    
-    return bestPrice
+        bestOfferToSell = {}
 
+        for order in self.orders.values():
+            if order.getOrderType() == OrderType.BUY:
+                if bestOfferToSell:
+                    if bestOfferToSell["price"] == order.getPrice():
+                        bestOfferToSell["quantity"] += order.getQuantity()
+                    elif bestOfferToSell["price"] < order.getPrice():
+                        bestOfferToSell["price"] = order.getPrice()
+                        bestOfferToSell["quantity"] = order.getQuantity()
+                else:
+                    bestOfferToSell["price"] = order.getPrice()
+                    bestOfferToSell["quantity"] = order.getQuantity()
+        
+        return bestOfferToSell
 
 def main():
     
@@ -157,14 +153,14 @@ def main():
         
         # if there is another order in given list - adds to list of orders - else quits program
 
-        addingAction = Action.createActionObject(givenOrders[i])
-        orderBook.addAction(addingAction)
+        action = Action.createActionObject(givenOrders[i])
+        orderBook.addAction(action)
         
-        bestSharesToBuy = findBestPrice(orderBook, OrderType.SELL)
-        bestSharesToSell = findBestPrice(orderBook, OrderType.BUY)
+        bestSharesToBuy = orderBook.findBestOfferToBuy()
+        bestSharesToSell = orderBook.findBestOfferToSell()
         
         print("Order added in this step from the given list:")
-        print(addingAction)
+        print(action)
         print()
         print("Actual orderbook:")
         for order in orderBook.orders.values():
@@ -180,7 +176,7 @@ def main():
         if bestSharesToSell:
             print("The best you can sell is " + str(bestSharesToSell["quantity"]) + " shares at price " + str(bestSharesToSell["price"]) + "$")
         else:
-            print("The best you can buy is - no SELL offers in orderbook")
+            print("The best you can sell is - no BUY offers in orderbook")
         
     print("No more given orders.")
 
